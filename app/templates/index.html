@@ -11,7 +11,15 @@
 <div class="glass">
   {% if error %}<div class="error">{{ error }}</div>{% endif %}
   <form method="post" action="/check" enctype="multipart/form-data" id="check-form">
-    <div class="check-grid">
+    <div>
+      <span class="field-label">Check a live page</span>
+      <div class="url-row">
+        <input type="text" name="page_url" id="page-url" class="url-input"
+               placeholder="https://example.com — fetch the page and check its HTML" autocomplete="off">
+      </div>
+    </div>
+    <div class="or-divider">or</div>
+    <div class="check-grid" style="margin-top: 18px;">
       <div>
         <span class="field-label">Upload a file</span>
         <label class="drop" id="drop">
@@ -39,6 +47,8 @@
   <div class="stat"><div class="num">{{ stats.avg_score }}</div><div class="lbl">average score</div></div>
 </div>
 {% endif %}
+
+<p class="honesty-note">SlopCheck finds concrete slop patterns — it doesn't claim to prove who wrote your code. Scores on snippets under 15 lines are noise, so we won't score those.</p>
 
 {% if recent %}
 <div class="glass" style="margin-top: 22px;">
@@ -74,9 +84,10 @@ drop.addEventListener('drop', ev => {
   }
 });
 document.getElementById('check-form').addEventListener('submit', ev => {
-  if (!input.files.length && !pasted.value.trim()) {
+  const url = document.getElementById('page-url').value.trim();
+  if (!input.files.length && !pasted.value.trim() && !url) {
     ev.preventDefault();
-    alert('Upload a file or paste some code first.');
+    alert('Upload a file, paste some code, or enter a page URL first.');
   }
 });
 </script>

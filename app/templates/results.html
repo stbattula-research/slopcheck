@@ -27,7 +27,26 @@
       <span class="grade-pill {% if g == 'Human-grade' %}grade-human{% elif g == 'Mostly human' %}grade-mostly{% elif g == 'Slop detected' %}grade-slop{% else %}grade-pure{% endif %}">{{ g }}</span>
       <p>{{ findings | length }} finding{{ 's' if findings|length != 1 }} · −{{ 100 - check.score }} points</p>
       <p style="font-size: 13px;">{{ check.kind }} · checked {{ check.created_at[:16].replace('T', ' ') }}</p>
+      <p style="font-size: 13px;">
+        <a href="/results/{{ check.id }}/export.md" style="color: var(--rose-deep); font-weight: 700;">⬇ Markdown report</a>
+        &nbsp;·&nbsp;
+        <a href="/results/{{ check.id }}/export.json" style="color: var(--rose-deep); font-weight: 700;">⬇ JSON</a>
+      </p>
     </div>
+  </div>
+
+  <div class="summary-box">
+    <strong>Summary</strong>
+    <p>{{ summary }}</p>
+  </div>
+
+  <div class="cat-grid">
+    {% for key, cat in category_scores.items() %}
+    <div class="cat">
+      <div class="cat-head"><span>{{ cat.label }}</span><span>{{ cat.score }}/{{ cat.weight }}</span></div>
+      <div class="cat-bar"><div class="cat-fill" style="width: {{ (cat.score / cat.weight * 100) | round }}%;"></div></div>
+    </div>
+    {% endfor %}
   </div>
 
   {% if auto_ids and not show_fixed %}
@@ -38,7 +57,12 @@
 
   {% if show_fixed %}
   <div class="glass" style="margin-top: 22px; background: rgba(205,180,246,.22);">
-    <span class="field-label">🪄 Auto-fixed code <span style="color: var(--ink-soft); font-weight: 400;">({{ applied|length }} fix{{ 'es' if applied|length != 1 }} applied)</span></span>
+    <span class="field-label">🪄 Auto-fixed code
+      <span style="color: var(--ink-soft); font-weight: 400;">({{ applied|length }} fix{{ 'es' if applied|length != 1 }} applied)</span>
+      {% if score_delta is not none %}
+      <span class="delta-pill">re-scored {{ fixed_score }}/100 ({{ '+' if score_delta >= 0 }}{{ score_delta }})</span>
+      {% endif %}
+    </span>
     {% if applied %}
     <p style="font-size: 14px; color: var(--ink-soft);">Applied: {{ applied | join(', ') }}. Copy the result below — always review before shipping.</p>
     <pre class="codebox">{{ fixed_code }}</pre>
@@ -69,7 +93,24 @@
   {% endfor %}
 </div>
 
+{% if code_lines %}
+<div class="glass" style="margin-top: 22px;">
+  <span class="field-label">Code under review
+    <span style="color: var(--ink-soft); font-weight: 400;">— highlighted lines have findings</span>
+  </span>
+  <div class="codeview">
+    {% for line in code_lines %}
+    {% set ln = loop.index %}
+    <div class="codeline {% if ln in flagged %}flagged{% endif %}" {% if ln in flagged %}title="{{ flagged[ln] | join('; ') }}"{% endif %}><span class="lineno">{{ ln }}</span><span class="code-text">{{ line }}</span></div>
+    {% endfor %}
+  </div>
+  {% if code_truncated %}<p style="font-size: 13px; color: var(--ink-soft);">Showing first 1000 lines.</p>{% endif %}
+</div>
+{% endif %}
+
 <div class="center mt">
   <a class="btn secondary" href="/">← Check another file</a>
 </div>
+
+<p class="honesty-note">SlopCheck finds concrete slop patterns — it doesn't claim to prove who wrote your code. Findings are evidence for your judgment, not a verdict.</p>
 {% endblock %}
