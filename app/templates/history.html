@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}History · SlopCheck{% endblock %}
+{% block content %}
+<div class="glass">
+  <span class="field-label" style="font-size: 18px;">Check history</span>
+  {% if not checks %}
+  <div class="empty">No checks yet — <a href="/" style="color: var(--rose-deep); font-weight: 700;">run your first one</a>.</div>
+  {% else %}
+  <table class="checks">
+    <tr><th>File</th><th>Score</th><th>Grade</th><th>Findings</th><th>When</th></tr>
+    {% for c in checks %}
+    <tr>
+      <td><a href="/results/{{ c.id }}">{{ c.name }}</a></td>
+      <td><span class="score-chip" style="background: {% if c.score >= 90 %}#c9f2dd{% elif c.score >= 70 %}#fff3c9{% elif c.score >= 40 %}#ffd9c9{% else %}#ffc9d4{% endif %};">{{ c.score }}</span></td>
+      <td>{{ c.grade }}</td>
+      <td>{{ c.finding_count }}</td>
+      <td style="color: var(--ink-soft); font-size: 13px;">{{ c.created_at[:16].replace('T', ' ') }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+</div>
+<div class="stat-row">
+  <div class="stat"><div class="num">{{ stats.total }}</div><div class="lbl">checks run</div></div>
+  <div class="stat"><div class="num">{{ stats.avg_score }}</div><div class="lbl">average score</div></div>
+</div>
+{% endblock %}

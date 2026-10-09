@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Results — {{ check.name }} · SlopCheck{% endblock %}
+{% block content %}
+<div class="glass">
+  <div class="score-hero">
+    <div class="ring">
+      <svg width="190" height="190" viewBox="0 0 190 190">
+        <defs>
+          <linearGradient id="ringgrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#e0637f"/>
+            <stop offset="55%" stop-color="#9a6ee8"/>
+            <stop offset="100%" stop-color="#4a9eda"/>
+          </linearGradient>
+        </defs>
+        <circle class="track" cx="95" cy="95" r="80" fill="none" stroke-width="16"/>
+        <circle cx="95" cy="95" r="80" fill="none" stroke="url(#ringgrad)" stroke-width="16"
+                stroke-linecap="round"
+                stroke-dasharray="{{ (check.score / 100 * 502.65) | round(1) }} 502.65"/>
+      </svg>
+      <div class="ring-center">
+        <div><div class="ring-score">{{ check.score }}</div><div class="ring-label">slop score</div></div>
+      </div>
+    </div>
+    <div class="score-meta">
+      <h2>{{ check.name }}</h2>
+      {% set g = check.grade %}
+      <span class="grade-pill {% if g == 'Human-grade' %}grade-human{% elif g == 'Mostly human' %}grade-mostly{% elif g == 'Slop detected' %}grade-slop{% else %}grade-pure{% endif %}">{{ g }}</span>
+      <p>{{ findings | length }} finding{{ 's' if findings|length != 1 }} · −{{ 100 - check.score }} points</p>
+      <p style="font-size: 13px;">{{ check.kind }} · checked {{ check.created_at[:16].replace('T', ' ') }}</p>
+    </div>
+  </div>
+
+  {% if auto_ids and not show_fixed %}
+  <div class="center mt">
+    <a class="btn lavender" href="/results/{{ check.id }}?fixed=1">🪄 Auto-fix {{ auto_ids|length }} safe {{ 'issue' if auto_ids|length == 1 else 'issues' }}</a>
+  </div>
+  {% endif %}
+
+  {% if show_fixed %}
+  <div class="glass" style="margin-top: 22px; background: rgba(205,180,246,.22);">
+    <span class="field-label">🪄 Auto-fixed code <span style="color: var(--ink-soft); font-weight: 400;">({{ applied|length }} fix{{ 'es' if applied|length != 1 }} applied)</span></span>
+    {% if applied %}
+    <p style="font-size: 14px; color: var(--ink-soft);">Applied: {{ applied | join(', ') }}. Copy the result below — always review before shipping.</p>
+    <pre class="codebox">{{ fixed_code }}</pre>
+    {% else %}
+    <p style="color: var(--ink-soft);">Nothing safe to auto-fix — the remaining findings need a human touch (that's the point).</p>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<div class="glass" style="margin-top: 22px;">
+  <span class="field-label">Findings ({{ findings|length }})</span>
+  {% if not findings %}
+  <div class="empty">🎉 Clean. No AI fingerprints detected — this reads human-grade.</div>
+  {% endif %}
+  {% for f in findings %}
+  <div class="finding">
+    <div class="finding-head">
+      <span class="sev sev-{{ f.severity }}">{{ f.severity }}</span>
+      <span class="finding-name">{{ f.name }}</span>
+      {% if f.auto_fixable %}<span class="fix-badge">auto-fixable</span>{% endif %}
+      <span class="deduct">−{{ f.weight }}{% if f.count > 1 %} × {{ f.count }}{% endif %}</span>
+    </div>
+    <p>{{ f.description }}</p>
+    {% if f.excerpt %}<div class="excerpt">{{ f.excerpt }}</div>{% endif %}
+    <div class="suggestion"><strong>Human-grade fix</strong>{{ f.suggestion }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="center mt">
+  <a class="btn secondary" href="/">← Check another file</a>
+</div>
+{% endblock %}

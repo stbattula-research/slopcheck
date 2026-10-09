@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}SlopCheck — AI slop detector for UI code{% endblock %}
+{% block content %}
+<div class="hero">
+  <h1>Is this <span class="grad">AI slop</span>?</h1>
+  <p>Drop in HTML, CSS, or JS and get a slop score with concrete findings —
+     every flag comes with a human-grade fix suggestion. Deterministic checks,
+     no ML black box.</p>
+</div>
+
+<div class="glass">
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+  <form method="post" action="/check" enctype="multipart/form-data" id="check-form">
+    <div class="check-grid">
+      <div>
+        <span class="field-label">Upload a file</span>
+        <label class="drop" id="drop">
+          <div class="big">📁</div>
+          <p><strong>Drag &amp; drop</strong> or click to browse</p>
+          <p>.html · .css · .js · .jsx · .tsx · .vue</p>
+          <div class="file-name" id="file-name"></div>
+          <input type="file" name="file" id="file-input" accept=".html,.htm,.css,.js,.jsx,.tsx,.vue,.txt">
+        </label>
+      </div>
+      <div>
+        <span class="field-label">Or paste code</span>
+        <textarea class="code" name="pasted" id="pasted" placeholder="&lt;div class=&quot;hero&quot;&gt;&#10;  &lt;h1&gt;Welcome to our revolutionary platform&lt;/h1&gt;&#10;  ..."></textarea>
+      </div>
+    </div>
+    <div class="center mt">
+      <button class="btn" type="submit">Check for slop ✨</button>
+    </div>
+  </form>
+</div>
+
+{% if stats.total %}
+<div class="stat-row">
+  <div class="stat"><div class="num">{{ stats.total }}</div><div class="lbl">checks run</div></div>
+  <div class="stat"><div class="num">{{ stats.avg_score }}</div><div class="lbl">average score</div></div>
+</div>
+{% endif %}
+
+{% if recent %}
+<div class="glass" style="margin-top: 22px;">
+  <span class="field-label">Recent checks</span>
+  <table class="checks">
+    {% for c in recent %}
+    <tr>
+      <td><a href="/results/{{ c.id }}">{{ c.name }}</a></td>
+      <td><span class="score-chip" style="background: {% if c.score >= 90 %}#c9f2dd{% elif c.score >= 70 %}#fff3c9{% elif c.score >= 40 %}#ffd9c9{% else %}#ffc9d4{% endif %};">{{ c.score }}</span></td>
+      <td style="color: var(--ink-soft); font-size: 13px;">{{ c.grade }} · {{ c.finding_count }} findings</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+const drop = document.getElementById('drop');
+const input = document.getElementById('file-input');
+const label = document.getElementById('file-name');
+const pasted = document.getElementById('pasted');
+drop.addEventListener('click', () => input.click());
+input.addEventListener('change', () => {
+  if (input.files.length) label.textContent = '📄 ' + input.files[0].name;
+});
+['dragover','dragenter'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add('dragover'); }));
+['dragleave','drop'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.remove('dragover'); }));
+drop.addEventListener('drop', ev => {
+  if (ev.dataTransfer.files.length) {
+    input.files = ev.dataTransfer.files;
+    label.textContent = '📄 ' + ev.dataTransfer.files[0].name;
+  }
+});
+document.getElementById('check-form').addEventListener('submit', ev => {
+  if (!input.files.length && !pasted.value.trim()) {
+    ev.preventDefault();
+    alert('Upload a file or paste some code first.');
+  }
+});
+</script>
+{% endblock %}
